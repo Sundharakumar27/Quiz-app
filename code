@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Quiz App</title>
+  <style>
+    body {font-family: Arial, sans-serif;display: flex;align-items: center;justify-content: center;height: 100vh;margin: 0;background-image: url('https://example.com/your-image.jpg');background-size: cover;background-position: center;background-attachment: fixed;
+    .container {
+      max-width: 600px;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.8); /* Slight transparency for better readability */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      text-align: center;
+    }
+    .question {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+    .options {
+      list-style: none;
+      padding: 0;
+    }
+    .options li {
+      margin: 10px 0;
+    }
+    .options input {
+      margin-right: 8px;
+    }
+    .button {
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .button-primary {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .button-secondary {
+      background-color: #e7e7e7;
+      color: black;
+    }
+    .progress {
+      height: 10px;
+      background-color: #ddd;
+      border-radius: 5px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #4CAF50;
+      width: 0%;
+    }
+    .timer {
+      font-size: 0.9em;
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Online Quiz App</h2>
+  
+  <div id="quiz-container">
+    <div class="question" id="question">Question Text</div>
+    <ul class="options" id="options"></ul>
+    <div class="timer" id="timer">Time left: <span id="time">10</span> seconds</div>
+    <button class="button button-primary" onclick="nextQuestion()">Next Question</button>
+    
+    <div class="progress">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div id="score-display">Score: <span id="score">0</span></div>
+  </div>
+  
+  <div id="result" style="display: none;">
+    <h3>Quiz Complete!</h3>
+    <p>Your final score: <span id="final-score"></span> / <span id="total"></span> (<span id="percentage"></span>%)</p>
+    <p id="message"></p>
+    <button class="button button-secondary" onclick="restartQuiz()">Restart Quiz</button>
+  </div>
+</div>
+
+<script>
+  // Updated quiz data with various questions
+  const quizData = [
+    {
+      question: "What is the capital of France?",
+      options: ["Berlin", "Madrid", "Paris", "Lisbon"],
+      answer: "Paris"
+    },
+    {
+      question: "Which planet is known as the Red Planet?",
+      options: ["Earth", "Mars", "Jupiter", "Saturn"],
+      answer: "Mars"
+    },
+    {
+      question: "What is the largest ocean on Earth?",
+      options: ["Atlantic", "Indian", "Arctic", "Pacific"],
+      answer: "Pacific"
+    },
+    {
+      question: "In which year did the Titanic sink?",
+      options: ["1912", "1915", "1920", "1935"],
+      answer: "1912"
+    },
+    {
+      question: "Who wrote 'Romeo and Juliet'?",
+      options: ["William Shakespeare", "Jane Austen", "Mark Twain", "Charles Dickens"],
+      answer: "William Shakespeare"
+    },
+    {
+      question: "What is the chemical symbol for gold?",
+      options: ["Go", "Au", "Ag", "Gd"],
+      answer: "Au"
+    },
+    {
+      question: "How many continents are there on Earth?",
+      options: ["5", "6", "7", "8"],
+      answer: "7"
+    },
+    {
+      question: "What is the boiling point of water in Celsius?",
+      options: ["50°C", "100°C", "200°C", "500°C"],
+      answer: "100°C"
+    },
+    {
+      question: "Who is known as the father of computers?",
+      options: ["Albert Einstein", "Isaac Newton", "Charles Babbage", "Nikola Tesla"],
+      answer: "Charles Babbage"
+    },
+    {
+      question: "Which element has the atomic number 1?",
+      options: ["Oxygen", "Helium", "Hydrogen", "Carbon"],
+      answer: "Hydrogen"
+    }
+  ];
+
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let timer;
+  const totalQuestions = quizData.length;
+  const timeLimit = 10;
+
+  // Load the current question
+  function loadQuestion() {
+    resetTimer();
+    updateProgress();
+    const questionData = quizData[currentQuestionIndex];
+    document.getElementById("question").textContent = questionData.question;
+    const optionsContainer = document.getElementById("options");
+    optionsContainer.innerHTML = ""; // Clear previous options
+    questionData.options.forEach(option => {
+      const optionElement = document.createElement("li");
+      optionElement.innerHTML = `<input type="radio" name="option" value="${option}"> ${option}`;
+      optionsContainer.appendChild(optionElement);
+    });
+    document.getElementById("score-display").textContent = `Score: ${score}`;
+  }
+
+  // Timer function for each question
+  function startTimer() {
+    let timeLeft = timeLimit;
+    document.getElementById("time").textContent = timeLeft;
+    timer = setInterval(() => {
+      timeLeft--;
+      document.getElementById("time").textContent = timeLeft;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        alert("Time's up!");
+        nextQuestion();
+      }
+    }, 1000);
+  }
+
+  // Reset timer
+  function resetTimer() {
+    clearInterval(timer);
+    startTimer();
+  }
+
+  // Move to the next question
+  function nextQuestion() {
+    const selectedOption = document.querySelector('input[name="option"]:checked');
+    if (!selectedOption) {
+      alert("Please select an answer!");
+      return;
+    }
+    
+    const answer = selectedOption.value;
+    if (answer === quizData[currentQuestionIndex].answer) {
+      score++;
+    }
+    currentQuestionIndex++;
+    
+    if (currentQuestionIndex < totalQuestions) {
+      loadQuestion();
+    } else {
+      showResult();
+    }
+  }
+
+  // Update the progress bar
+  function updateProgress() {
+    const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+    document.getElementById("progress-bar").style.width = progress + "%";
+  }
+
+  // Display the final score
+  function showResult() {
+    clearInterval(timer);
+    document.getElementById("quiz-container").style.display = "none";
+    document.getElementById("result").style.display = "block";
+    document.getElementById("final-score").textContent = score;
+    document.getElementById("total").textContent = totalQuestions;
+    const percentage = (score / totalQuestions) * 100;
+    document.getElementById("percentage").textContent = percentage.toFixed(2);
+    document.getElementById("message").textContent = percentage >= 70 ? "Great job!" : "Better luck next time!";
+  }
+
+  // Restart the quiz
+  function restartQuiz() {
+    currentQuestionIndex = 0;
+    score = 0;
+    document.getElementById("quiz-container").style.display = "block";
+    document.getElementById("result").style.display = "none";
+    loadQuestion();
+  }
+
+  // Initialize the quiz
+  loadQuestion();
+</script>
+
+</body>
+</html>
